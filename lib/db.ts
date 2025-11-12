@@ -34,9 +34,14 @@ export function getDb(): Database.Database {
       mkdirSync(dbDir, { recursive: true });
     }
     
-    db = new Database(dbPath);
+    db = new Database(dbPath, {
+      // Enable WAL mode for better concurrency
+      // timeout option allows retries if database is locked
+    });
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = OFF');
+    // Set busy timeout to handle concurrent access gracefully (5 seconds)
+    db.pragma('busy_timeout = 5000');
     initializeDatabase(db);
   }
   return db;
@@ -359,10 +364,16 @@ export function insertQuestionInitializedEvent(event: {
 // 2. condition_preparation_events.condition_id -> token_registered_events.condition_id -> token0, token1
 // 3. token0/token1 matches maker_asset_id/taker_asset_id in order_filled_events (where "0" = USDC)
 export function getMarketsWithDataAndTrades() {
-  // Force checkpoint to ensure WAL writes are visible
-  checkpointDatabase();
   const db = getDb();
   const startTime = Date.now();
+  
+  // Try checkpoint, but don't block if it fails (polling might be writing)
+  try {
+    checkpointDatabase();
+  } catch (error) {
+    // Checkpoint failed - continue anyway, WAL mode allows concurrent reads
+    console.log('[DB] Checkpoint skipped (may have active writes)');
+  }
   
   // Debug: Check counts before query
   const totalQuestions = db.prepare('SELECT COUNT(*) as c FROM question_initialized_events').get() as { c: number };
@@ -381,6 +392,7 @@ export function getMarketsWithDataAndTrades() {
   // Relationship: question_id -> condition_id -> token0/token1
   // Use LEFT JOIN for token_registered_events so markets show even without tokens
   // Relationship: question_id -> condition_id -> token0/token1 (optional)
+  // Note: WAL mode allows concurrent reads even during writes, so this should work
   const results = db.prepare(`
     SELECT DISTINCT
       q.question_id,
