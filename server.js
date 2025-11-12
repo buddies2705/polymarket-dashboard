@@ -3,9 +3,8 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 
-// Initialize polling and database watcher
-// This must be imported before starting the server
-require('./lib/init');
+// Note: Initialization happens via app/layout.tsx which imports @/lib/init
+// This ensures TypeScript files are properly compiled by Next.js
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
