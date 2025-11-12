@@ -41,7 +41,8 @@ export async function POST(
     let token0: string | null = null;
     let token1: string | null = null;
 
-    if (tokens.length === 0 || !tokens[0].token0 || !tokens[0].token1) {
+    const tokenData = tokens[0] as any;
+    if (tokens.length === 0 || !tokenData?.token0 || !tokenData?.token1) {
       console.log(`[API] 📡 Tokens not found in DB, fetching from API for conditionId: ${conditionId.substring(0, 16)}...`);
       
       try {
@@ -156,7 +157,7 @@ export async function POST(
       data: {
         trades: allTradesForMarket,
         count: allTradesForMarket.length,
-        tokensFetched: !tokens.length || !tokens[0].token0 || !tokens[0].token1,
+        tokensFetched: !tokens.length || !(tokens[0] as any)?.token0 || !(tokens[0] as any)?.token1,
         tradesFetched: true,
       },
     });
