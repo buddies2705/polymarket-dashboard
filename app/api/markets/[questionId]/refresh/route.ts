@@ -8,7 +8,6 @@ export async function POST(
   { params }: { params: { questionId: string } }
 ) {
   const { questionId } = params;
-  console.log(`[API] 🔄 POST /api/markets/${questionId.substring(0, 16)}.../refresh - Refreshing market data...`);
   const startTime = Date.now();
   
   try {
@@ -43,7 +42,6 @@ export async function POST(
 
     const tokenData = tokens[0] as any;
     if (tokens.length === 0 || !tokenData?.token0 || !tokenData?.token1) {
-      console.log(`[API] 📡 Tokens not found in DB, fetching from API for conditionId: ${conditionId.substring(0, 16)}...`);
       
       try {
         const tokenEvents = await fetchTokenRegisteredByConditionId(conditionId);
@@ -67,10 +65,7 @@ export async function POST(
             
             token0 = eventToken0;
             token1 = eventToken1;
-            console.log(`[API] ✅ Stored tokens: token0=${token0.substring(0, 16)}..., token1=${token1.substring(0, 16)}...`);
           }
-        } else {
-          console.log(`[API] ⚠️  No TokenRegistered events found for conditionId`);
         }
       } catch (error) {
         console.error(`[API] ❌ Error fetching tokens:`, error);
@@ -87,7 +82,6 @@ export async function POST(
       const tokenData = tokens[0] as any;
       token0 = tokenData.token0;
       token1 = tokenData.token1;
-      console.log(`[API] ✅ Using existing tokens from DB: token0=${token0?.substring(0, 16)}..., token1=${token1?.substring(0, 16)}...`);
     }
 
     if (!token0 || !token1) {
@@ -103,10 +97,7 @@ export async function POST(
     // Step 3: Get existing trades from DB
     const existingTrades = getAllOrderFilledEvents();
     const existingTradesForMarket = filterTradesByTokens(existingTrades, [{ token0, token1 }]);
-    console.log(`[API] 📊 Found ${existingTradesForMarket.length} existing trades in DB`);
-
     // Step 4: Fetch new trades from API
-    console.log(`[API] 📡 Fetching new trades from API for token0 and token1...`);
     let newTradesFromAPI: any[] = [];
     
     try {
@@ -140,7 +131,6 @@ export async function POST(
         }
       }
       
-      console.log(`[API] ✅ Processed ${orderFilledEvents.length} OrderFilled events from API`);
     } catch (error) {
       console.error(`[API] ❌ Error fetching trades from API:`, error);
       // Continue with existing trades even if API call fails
@@ -150,8 +140,6 @@ export async function POST(
     const allTrades = getAllOrderFilledEvents();
     const allTradesForMarket = filterTradesByTokens(allTrades, [{ token0, token1 }]);
     
-    const duration = Date.now() - startTime;
-    console.log(`[API] ✅ Refresh complete: ${allTradesForMarket.length} total trades found (${duration}ms)`);
 
     return NextResponse.json({
       success: true,

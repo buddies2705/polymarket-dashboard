@@ -55,35 +55,21 @@ async function processQueue() {
   }
 
   isProcessingQueue = true;
-  // Reduced logging - only log queue start if queue is large
-  if (queryQueue.length > 5) {
-    console.log(`[Queue] 📋 Processing queue (${queryQueue.length} queries waiting)...`);
-  }
 
   while (queryQueue.length > 0) {
     const queuedQuery = queryQueue.shift();
     if (!queuedQuery) continue;
 
-    const { fn, retries, maxRetries, backoffMs, name } = queuedQuery;
-    const queryName = name || 'Query';
+    const { fn, retries, maxRetries, backoffMs } = queuedQuery;
 
     try {
-      // Only log if retrying or if queue is large
-      if (retries > 0 || queryQueue.length > 5) {
-        console.log(`[Queue] ▶️  Executing ${queryName} (${queryQueue.length} remaining, attempt ${retries + 1}/${maxRetries + 1})...`);
-      }
       await fn();
-      // Only log completion if retrying or queue is large
-      if (retries > 0 || queryQueue.length > 5) {
-        console.log(`[Queue] ✅ ${queryName} completed (${queryQueue.length} remaining)`);
-      }
     } catch (error) {
-      console.error(`[Queue] ❌ ${queryName} failed (attempt ${retries + 1}/${maxRetries + 1}):`, error);
+      console.error(`[Queue] ❌ Query failed (attempt ${retries + 1}/${maxRetries + 1}):`, error);
       
       // Retry with backoff if we haven't exceeded max retries
       if (retries < maxRetries) {
         const nextBackoff = backoffMs * BACKOFF_MULTIPLIER;
-        console.log(`[Queue] 🔄 Retrying ${queryName} in ${(nextBackoff / 1000).toFixed(1)}s...`);
         
         // Wait for backoff period
         await sleep(backoffMs);
@@ -94,19 +80,15 @@ async function processQueue() {
           retries: retries + 1,
           maxRetries,
           backoffMs: nextBackoff,
-          name,
+          name: queuedQuery.name,
         });
       } else {
-        console.error(`[Queue] ❌ ${queryName} failed after ${maxRetries + 1} attempts. Giving up.`);
+        console.error(`[Queue] ❌ Query failed after ${maxRetries + 1} attempts. Giving up.`);
       }
     }
   }
 
   isProcessingQueue = false;
-  // Only log if queue was large
-  if (queryQueue.length === 0) {
-    // Silent completion
-  }
 }
 
 // Add query to queue with retry support
@@ -138,16 +120,8 @@ function enqueueQuery(
 // Helper function to process and store events
 async function processTokenRegisteredEvents(isInitialSync: boolean = false) {
   const prefix = isInitialSync ? '[Initial Sync]' : '[Polling]';
-  // Reduced logging - only log start for initial sync
-  if (isInitialSync) {
-    console.log(`${prefix} 🪙 Processing TokenRegistered events...`);
-  }
   try {
     const events = await fetchTokenRegisteredEvents(10000);
-    // Reduced logging - only log if many events
-    if (events.length > 100 || isInitialSync) {
-      console.log(`${prefix} 📦 Processing ${events.length} events...`);
-    }
     let count = 0;
     let skipped = 0;
     for (const event of events) {
@@ -176,7 +150,6 @@ async function processTokenRegisteredEvents(isInitialSync: boolean = false) {
         skipped++;
       }
     }
-    console.log(`${prefix} ✅ Completed: ${count} stored, ${skipped} skipped, ${events.length} total`);
     return count;
   } catch (error) {
     console.error(`${prefix} ❌ Error processing TokenRegistered:`, error);
@@ -186,16 +159,8 @@ async function processTokenRegisteredEvents(isInitialSync: boolean = false) {
 
 async function processOrderFilledEvents(isInitialSync: boolean = false) {
   const prefix = isInitialSync ? '[Initial Sync]' : '[Polling]';
-  // Reduced logging - only log start for initial sync
-  if (isInitialSync) {
-    console.log(`${prefix} 💰 Processing OrderFilled events...`);
-  }
   try {
     const events = await fetchOrderFilledEvents(10000);
-    // Reduced logging - only log if many events
-    if (events.length > 100 || isInitialSync) {
-      console.log(`${prefix} 📦 Processing ${events.length} events...`);
-    }
     let count = 0;
     let skipped = 0;
     for (const event of events) {
@@ -223,15 +188,10 @@ async function processOrderFilledEvents(isInitialSync: boolean = false) {
           transaction_hash: event.Transaction.Hash,
         });
         count++;
-        // Reduced logging - only log every 2000 items
-        if (count % 2000 === 0) {
-          console.log(`${prefix} Progress: ${count}/${events.length} processed...`);
-        }
       } else {
         skipped++;
       }
     }
-    console.log(`${prefix} ✅ Completed: ${count} stored, ${skipped} skipped, ${events.length} total`);
     return count;
   } catch (error) {
     console.error(`${prefix} ❌ Error processing OrderFilled:`, error);
@@ -241,16 +201,8 @@ async function processOrderFilledEvents(isInitialSync: boolean = false) {
 
 async function processConditionPreparationEvents(isInitialSync: boolean = false) {
   const prefix = isInitialSync ? '[Initial Sync]' : '[Polling]';
-  // Reduced logging - only log start for initial sync
-  if (isInitialSync) {
-    console.log(`${prefix} 🔗 Processing ConditionPreparation events...`);
-  }
   try {
     const events = await fetchConditionPreparationEvents(10000);
-    // Reduced logging - only log if many events
-    if (events.length > 100 || isInitialSync) {
-      console.log(`${prefix} 📦 Processing ${events.length} events...`);
-    }
     let count = 0;
     let skipped = 0;
     for (const event of events) {
@@ -278,7 +230,6 @@ async function processConditionPreparationEvents(isInitialSync: boolean = false)
         skipped++;
       }
     }
-    console.log(`${prefix} ✅ Completed: ${count} stored, ${skipped} skipped, ${events.length} total`);
     return count;
   } catch (error) {
     console.error(`${prefix} ❌ Error processing ConditionPreparation:`, error);
@@ -288,16 +239,8 @@ async function processConditionPreparationEvents(isInitialSync: boolean = false)
 
 async function processQuestionInitializedEvents(isInitialSync: boolean = false) {
   const prefix = isInitialSync ? '[Initial Sync]' : '[Polling]';
-  // Reduced logging - only log start for initial sync
-  if (isInitialSync) {
-    console.log(`${prefix} 📋 Processing QuestionInitialized events...`);
-  }
   try {
     const events = await fetchQuestionInitializedEvents(10000);
-    // Reduced logging - only log if many events
-    if (events.length > 100 || isInitialSync) {
-      console.log(`${prefix} 📦 Processing ${events.length} events...`);
-    }
     let count = 0;
     let skipped = 0;
     for (const event of events) {
@@ -339,7 +282,6 @@ async function processQuestionInitializedEvents(isInitialSync: boolean = false) 
         skipped++;
       }
     }
-    console.log(`${prefix} ✅ Completed: ${count} stored, ${skipped} skipped, ${events.length} total`);
     return count;
   } catch (error) {
     console.error(`${prefix} ❌ Error processing QuestionInitialized:`, error);
@@ -349,18 +291,13 @@ async function processQuestionInitializedEvents(isInitialSync: boolean = false) 
 
 // Initial sync function - runs all queries if any table is empty
 async function runInitialSync() {
-  console.log('\n[Initial Sync] 🔄 Checking if initial sync is needed...');
-  
   // Only skip if ALL tables are filled
   if (areAllTablesFilled()) {
-    console.log('[Initial Sync] ✅ All tables have data, skipping initial sync');
     return;
   }
 
   isInitialSyncInProgress = true;
   initialSyncStartTime = Date.now();
-  console.log('[Initial Sync] 🚀 Starting initial data sync (some tables are empty)...\n');
-  console.log('[Initial Sync] 📋 Queueing queries for sequential execution (one at a time)...\n');
   
   // Store results to track progress
   const results: { [key: string]: number } = {
@@ -429,13 +366,6 @@ async function runInitialSync() {
     // Wait for all queries to complete (they'll execute sequentially via queue)
     await Promise.all(promises);
 
-    const duration = initialSyncStartTime ? ((Date.now() - initialSyncStartTime) / 1000).toFixed(1) : '0';
-    console.log('\n[Initial Sync] ✅ Initial sync completed!');
-    console.log(`[Initial Sync] Summary (took ${duration}s):`);
-    console.log(`  - TokenRegistered: ${results.tokenReg} events`);
-    console.log(`  - OrderFilled: ${results.orderFilled} events`);
-    console.log(`  - ConditionPreparation: ${results.condPrep} events`);
-    console.log(`  - QuestionInitialized: ${results.questionInit} events\n`);
   } catch (error) {
     console.error('[Initial Sync] ❌ Error during initial sync:', error);
   } finally {
@@ -455,24 +385,16 @@ export function getInitialSyncStatus() {
 
 export function startPolling() {
   if (isPolling) {
-    console.log('[Polling] ⚠️  Polling already started, skipping...');
     return;
   }
 
   isPolling = true;
-  console.log('[Polling] 🚀 Starting scheduled polling system...');
-  // Reduced logging - removed schedule details to avoid rate limits
 
   // Run initial sync if tables are empty
   runInitialSync();
 
   // TokenRegistered: Every 5 minutes - queue for sequential execution with retry
   cron.schedule('*/5 * * * *', () => {
-    const now = new Date().toISOString();
-    // Reduced logging - only log first scheduled job
-    if (Math.random() < 0.1) {
-      console.log(`[Polling] ⏰ TokenRegistered scheduled (every 5 min)`);
-    }
     enqueueQuery(
       () => processTokenRegisteredEvents(),
       { name: 'TokenRegistered (Polling)', maxRetries: 3 }
@@ -506,6 +428,5 @@ export function startPolling() {
     );
   });
 
-  console.log('[Polling] ✅ All polling jobs scheduled and active');
 }
 

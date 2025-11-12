@@ -11,23 +11,14 @@ if (typeof window === 'undefined') {
   
   // Load .env.local first (highest priority in Next.js)
   try {
-    const result = config({ path: envLocalPath });
-    if (result && !result.error) {
-      console.log(`[Env] ✅ Loaded .env.local file from: ${envLocalPath}`);
-      console.log(`[Env] 🔑 BITQUERY_OAUTH_TOKEN loaded: ${process.env.BITQUERY_OAUTH_TOKEN ? 'Yes' : 'No'}`);
-    } else if (result?.error) {
-      console.log(`[Env] ⚠️  .env.local file not found at: ${envLocalPath}`);
-    }
-  } catch (error: any) {
-    console.log(`[Env] ⚠️  Error loading .env.local: ${error?.message || 'File not found'}`);
+    config({ path: envLocalPath });
+  } catch (error) {
+    // Ignore if file doesn't exist
   }
   
   // Also try .env as fallback
   try {
-    const result = config({ path: envPath });
-    if (result && !result.error) {
-      console.log(`[Env] ✅ Loaded .env file from: ${envPath}`);
-    }
+    config({ path: envPath });
   } catch (error) {
     // Ignore if file doesn't exist
   }
@@ -47,12 +38,8 @@ export function getBitqueryOAuthToken(): string {
   }
   
   if (token && token.length > 0) {
-    console.log(`[Env] ✅ Found OAuth token (length: ${token.length}, starts with: ${token.substring(0, 10)}...)`);
     return token;
   }
-  
-  console.log(`[Env] ⚠️  BITQUERY_OAUTH_TOKEN/BITQUERY_API_KEY not found in process.env`);
-  console.log(`[Env] 🔍 Attempting to load .env.local file...`);
   
   // Try to manually load .env.local if Next.js hasn't loaded it yet
   try {
@@ -69,19 +56,13 @@ export function getBitqueryOAuthToken(): string {
           .trim();
       }
       if (token && token.length > 0) {
-        console.log(`[Env] ✅ Loaded OAuth token from .env.local (length: ${token.length})`);
         return token;
       }
     }
-  } catch (error: any) {
-    console.log(`[Env] ⚠️  Could not load .env.local: ${error?.message || 'File not found'}`);
+  } catch (error) {
+    // Ignore
   }
   
-  console.log(`[Env] ❌ No OAuth token found. Please create .env.local file with:`);
-  console.log(`[Env]    BITQUERY_OAUTH_TOKEN=your_token_here`);
-  console.log(`[Env]    OR`);
-  console.log(`[Env]    BITQUERY_API_KEY=your_token_here`);
-  console.log(`[Env]    Make sure there are no quotes around the token value`);
   return '';
 }
 

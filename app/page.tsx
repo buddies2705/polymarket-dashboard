@@ -38,11 +38,7 @@ export default function Home() {
     return () => clearTimeout(timeout);
   }, [loading]);
   
-  // Force render after initial mount
-  useEffect(() => {
-    console.log('[Frontend] Component mounted, loading:', loading, 'markets:', markets.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const fetchSyncStatus = async () => {
     try {
@@ -63,7 +59,6 @@ export default function Home() {
 
   const fetchMarkets = async () => {
     try {
-      console.log('[Frontend] 🚀 Fetching markets...');
       setLoading(true);
       
       const controller = new AbortController();
@@ -78,7 +73,6 @@ export default function Home() {
       });
       
       clearTimeout(timeoutId);
-      console.log('[Frontend] ✅ Response received, status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -87,25 +81,16 @@ export default function Home() {
       }
       
       const data = await response.json();
-      console.log('[Frontend] 📦 Parsed JSON:', {
-        success: data.success,
-        count: data.count,
-        dataLength: data.data?.length || 0
-      });
       
       if (data.success && Array.isArray(data.data)) {
-        console.log(`[Frontend] ✅ Setting ${data.data.length} markets`);
         setMarkets(data.data);
         setError(null);
-        console.log(`[Frontend] ✅ State updated with ${data.data.length} markets`);
       } else {
-        console.warn('[Frontend] ⚠️ Invalid response format:', data);
         setError(data.error || 'Invalid response format');
         setMarkets([]);
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.error('[Frontend] ❌ Request timeout');
         setError('Request timeout - please refresh the page');
       } else {
         console.error('[Frontend] ❌ Error fetching markets:', err);
@@ -113,14 +98,11 @@ export default function Home() {
       }
       setMarkets([]);
     } finally {
-      console.log('[Frontend] 🏁 Finally block - setting loading to false');
       setLoading(false);
-      console.log('[Frontend] 🏁 Loading state set to false');
     }
   };
 
   useEffect(() => {
-    console.log('[Frontend] useEffect triggered - fetching data...');
     fetchSyncStatus();
     fetchMarkets();
     
@@ -131,12 +113,10 @@ export default function Home() {
     
     // Auto-refresh markets every 30 seconds
     const marketsInterval = setInterval(() => {
-      console.log('[Frontend] Auto-refreshing markets...');
       fetchMarkets();
     }, 30000);
     
     return () => {
-      console.log('[Frontend] Cleaning up intervals');
       clearInterval(syncInterval);
       clearInterval(marketsInterval);
     };

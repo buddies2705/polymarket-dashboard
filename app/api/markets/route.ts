@@ -45,16 +45,13 @@ function doesTradeMatchTokens(trade: any, token0: string | null, token1: string 
 }
 
 export async function GET() {
-  console.log('[API] 📊 GET /api/markets - Fetching markets list...');
   const startTime = Date.now();
   try {
     // Get markets with token info
     const markets = getMarketsWithDataAndTrades();
-    console.log(`[API] Found ${markets.length} markets with tokens`);
     
     // Get all trades for filtering (limit to recent trades for performance)
     const allTrades = getAllOrderFilledEvents();
-    console.log(`[API] Found ${allTrades.length} total trades`);
     
     // Create a map of trades by asset IDs for faster lookup
     const tradesByAssetId = new Map<string, any[]>();
@@ -77,7 +74,6 @@ export async function GET() {
       }
     });
     
-    console.log(`[API] Created trade map with ${tradesByAssetId.size} unique asset IDs`);
     
     // Calculate trade counts for all markets (optimized lookup)
     const allMarkets = markets
@@ -144,8 +140,6 @@ export async function GET() {
     const marketsWithTrades = allMarkets.filter((m: any) => m.trade_count > 0);
     const marketsWithoutTrades = allMarkets.filter((m: any) => m.trade_count === 0);
     
-    const duration = Date.now() - startTime;
-    console.log(`[API] ✅ GET /api/markets - Returning ${allMarkets.length} markets (${marketsWithTrades.length} with trades, ${marketsWithoutTrades.length} without trades) in ${duration}ms`);
     return NextResponse.json({
       success: true,
       data: allMarkets,
@@ -154,8 +148,7 @@ export async function GET() {
       without_trades: marketsWithoutTrades.length,
     });
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[API] ❌ GET /api/markets - Error after ${duration}ms:`, error);
+    console.error(`[API] ❌ GET /api/markets - Error:`, error);
     return NextResponse.json(
       {
         success: false,

@@ -7,7 +7,6 @@ export async function GET(
   { params }: { params: { questionId: string } }
 ) {
   const { questionId } = params;
-  console.log(`[API] 📊 GET /api/markets/${questionId.substring(0, 16)}... - Fetching market details...`);
   const startTime = Date.now();
   try {
     // getMarketDetails already filters trades correctly, so we use them directly
@@ -15,7 +14,6 @@ export async function GET(
     
     if (!details) {
       const duration = Date.now() - startTime;
-      console.log(`[API] ⚠️  GET /api/markets/${questionId.substring(0, 16)}... - Market not found (${duration}ms)`);
       return NextResponse.json(
         {
           success: false,
@@ -56,14 +54,7 @@ export async function GET(
     // Calculate prices for YES and NO tokens
     const prices = calculateMarketPrices(trades, token0, token1, p1, p2);
     
-    console.log(`[API] 📦 Market details: condition_id=${conditionId}, trades=${trades.length}`);
-    console.log(`[API] 💰 Prices: YES=${prices.yesPrice?.formatted || 'N/A'}, NO=${prices.noPrice?.formatted || 'N/A'}`);
-    if (trades.length > 0) {
-      console.log(`[API] 📊 Sample trade: maker=${trades[0].maker_asset_id}, taker=${trades[0].taker_asset_id}`);
-    }
-
     const duration = Date.now() - startTime;
-    console.log(`[API] ✅ GET /api/markets/${questionId.substring(0, 16)}... - Returning market with ${trades.length} trades (${duration}ms)`);
     return NextResponse.json({
       success: true,
       data: {

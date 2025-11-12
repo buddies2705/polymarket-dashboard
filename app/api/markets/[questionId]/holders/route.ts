@@ -11,7 +11,6 @@ export async function GET(
 ) {
   // Decode questionId in case it's URL encoded
   const questionId = decodeURIComponent(params.questionId);
-  console.log(`[API] 📊 GET /api/markets/${questionId.substring(0, 16)}.../holders - Fetching holders...`);
   const startTime = Date.now();
   
   try {
@@ -46,7 +45,6 @@ export async function GET(
     
     const tokenData = tokens[0] as any;
     if (tokens.length === 0 || !tokenData?.token0 || !tokenData?.token1) {
-      console.log(`[API] ⚠️  No tokens found in DB for conditionId, trying to fetch from API...`);
       // Try to fetch tokens from API if not in DB
       try {
         const { fetchTokenRegisteredByConditionId, getArgumentValue } = await import('@/lib/bitquery');
@@ -72,7 +70,6 @@ export async function GET(
             // Use the fetched tokens
             token0 = eventToken0;
             token1 = eventToken1;
-            console.log(`[API] ✅ Fetched and stored tokens from API: token0=${token0.substring(0, 16)}..., token1=${token1.substring(0, 16)}...`);
           } else {
             console.error(`[API] ❌ Could not extract tokens. ConditionId: ${eventConditionId}, Token0: ${eventToken0}, Token1: ${eventToken1}`);
             return NextResponse.json(
@@ -84,7 +81,6 @@ export async function GET(
             );
           }
         } else {
-          console.log(`[API] ⚠️  No TokenRegistered events found in API for conditionId: ${conditionId.substring(0, 16)}...`);
           return NextResponse.json(
             {
               success: false,
@@ -109,7 +105,6 @@ export async function GET(
       const tokenData = tokens[0] as any;
       token0 = tokenData.token0;
       token1 = tokenData.token1;
-      console.log(`[API] ✅ Using tokens from DB: token0=${token0?.substring(0, 16)}..., token1=${token1?.substring(0, 16)}...`);
     }
     
     if (!token0 || !token1) {
@@ -122,12 +117,9 @@ export async function GET(
       );
     }
 
-    console.log(`[API] 📡 Fetching holders for token0: ${token0.substring(0, 16)}..., token1: ${token1.substring(0, 16)}...`);
-    
     // Verify token is loaded before making request
     const token = getBitqueryOAuthToken();
     if (!token || !token.trim()) {
-      console.error(`[API] ❌ OAuth token not found!`);
       return NextResponse.json(
         {
           success: false,
@@ -136,18 +128,11 @@ export async function GET(
         { status: 500 }
       );
     }
-    console.log(`[API] ✅ OAuth token loaded (length: ${token.length}, starts with: ${token.substring(0, 10)}...)`);
-    
     // Reset client to ensure fresh token is used
     resetClient();
     
     // Fetch balance updates from API
     const balanceUpdates = await fetchBalanceUpdates(token0, token1);
-    
-    console.log(`[API] 📦 Received ${balanceUpdates.length} balance updates from API`);
-    if (balanceUpdates.length > 0) {
-      console.log(`[API] 📋 Sample update structure:`, JSON.stringify(balanceUpdates[0], null, 2));
-    }
     
     // Process and format the data
     // Note: The response structure should match the query structure
@@ -177,17 +162,9 @@ export async function GET(
     }).filter((holder: any) => {
       // Filter out zero balances and invalid addresses
       const balance = parseFloat(holder.balance);
-      const isValid = !isNaN(balance) && balance > 0 && holder.address;
-      if (!isValid && holder.balance !== '0') {
-        console.log(`[API] ⚠️  Filtered out invalid holder:`, holder);
-      }
-      return isValid;
+      return !isNaN(balance) && balance > 0 && holder.address;
     });
     
-    console.log(`[API] ✅ Processed ${holders.length} valid holders from ${balanceUpdates.length} balance updates`);
-
-    const duration = Date.now() - startTime;
-    console.log(`[API] ✅ GET /api/markets/${questionId.substring(0, 16)}.../holders - Returning ${holders.length} holders (${duration}ms)`);
 
     return NextResponse.json({
       success: true,

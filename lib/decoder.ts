@@ -5,12 +5,10 @@
 // Decode hex-encoded ancillary data to UTF-8 string
 export function decodeAncillaryData(hexData: string): string {
   if (!hexData || hexData === '0x') {
-    console.log('[Decoder] ⚠️  Empty or invalid hex data provided');
     return '';
   }
   
   try {
-    console.log(`[Decoder] 🔓 Decoding ancillary data (length: ${hexData.length} chars)...`);
     // Remove '0x' prefix if present
     const hex = hexData.startsWith('0x') ? hexData.slice(2) : hexData;
     
@@ -28,7 +26,6 @@ export function decodeAncillaryData(hexData: string): string {
     const decoder = new TextDecoder('utf-8');
     const decoded = decoder.decode(new Uint8Array(bytes));
     
-    console.log(`[Decoder] ✅ Decoded ${decoded.length} characters (UTF-8)`);
     return decoded;
   } catch (error) {
     console.error('[Decoder] ❌ Error decoding ancillary data:', error);
@@ -42,7 +39,6 @@ export function decodeAncillaryData(hexData: string): string {
           decoded += String.fromCharCode(charCode);
         }
       }
-      console.log('[Decoder] ⚠️  Used fallback decoding (may have encoding issues)');
       return decoded;
     } catch (fallbackError) {
       console.error('[Decoder] ❌ Fallback decoding also failed:', fallbackError);
@@ -68,11 +64,9 @@ export function parseAncillaryData(decodedText: string): {
   };
 
   if (!decodedText) {
-    console.log('[Decoder] ⚠️  No decoded text to parse');
     return result;
   }
 
-  console.log(`[Decoder] 📝 Parsing ancillary data (${decodedText.length} chars)...`);
   try {
     // Extract title - handle both "q: title:" and "title:" formats, and commas within titles
     const titleMatch = decodedText.match(/(?:q:\s*)?title:\s*(.+?),\s*description:/i);
@@ -98,7 +92,6 @@ export function parseAncillaryData(decodedText: string): {
           result.description = afterDesc.trim();
         }
       }
-      console.log(`[Decoder] 📄 Extracted description (${result.description.length} chars): "${result.description.substring(0, 100)}${result.description.length > 100 ? '...' : ''}"`);
     }
 
     // Extract market_id
@@ -135,7 +128,6 @@ export function parseAncillaryData(decodedText: string): {
       result.initializer = initializerMatch[1].trim();
     }
 
-    console.log(`[Decoder] ✅ Parsed: title="${result.title.substring(0, 50)}${result.title.length > 50 ? '...' : ''}", market_id=${result.market_id || 'N/A'}, outcomes=[${result.p1 || ''}, ${result.p2 || ''}, ${result.p3 || ''}]`);
   } catch (error) {
     console.error('[Decoder] ❌ Error parsing ancillary data:', error);
   }

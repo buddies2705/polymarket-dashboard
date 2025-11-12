@@ -12,7 +12,6 @@ let client: GraphQLClient | null = null;
 // Reset client (useful if token changes)
 export function resetClient(): void {
   client = null;
-  console.log('[Bitquery] 🔄 Client reset');
 }
 
 function getClient(): GraphQLClient {
@@ -40,14 +39,6 @@ function getClient(): GraphQLClient {
   if (!client) {
     const endpoint = process.env.BITQUERY_ENDPOINT || 'https://streaming.bitquery.io/graphql';
     
-    console.log(`[Bitquery] 🔌 Initializing GraphQL client: ${endpoint}`);
-    console.log(`[Bitquery] 🔑 Token loaded: ${trimmedToken.substring(0, 20)}... (length: ${trimmedToken.length})`);
-    
-    // Verify token format (should start with 'ory_at_')
-    if (!trimmedToken.startsWith('ory_at_')) {
-      console.warn(`[Bitquery] ⚠️  Token format may be incorrect. Expected format: 'ory_at_...'`);
-    }
-    
     // Bitquery API uses Authorization: Bearer header (as shown in working curl example)
     client = new GraphQLClient(endpoint, {
       headers: {
@@ -55,8 +46,6 @@ function getClient(): GraphQLClient {
         'Content-Type': 'application/json',
       },
     });
-    console.log('[Bitquery] ✅ Client initialized with Authorization: Bearer header');
-    console.log(`[Bitquery] 🔍 Full Authorization header: Bearer ${trimmedToken.substring(0, 50)}...`);
   }
   
   return client;
@@ -113,10 +102,6 @@ export function getArgumentValue(args: any[], name: string): string | null {
 }
 
 export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise<any[]> {
-  // Reduced logging - only log if limit is high (initial sync)
-  if (limit > 5000) {
-    console.log(`[Bitquery] 📡 Fetching TokenRegistered events (limit: ${limit})...`);
-  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -140,10 +125,6 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    // Reduced logging - only log summary
-    if (events.length > 0 || duration > 5000) {
-      console.log(`[Bitquery] ✅ Fetched ${events.length} TokenRegistered events in ${duration}ms`);
-    }
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching TokenRegistered events:', error);
@@ -152,10 +133,6 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
 }
 
 export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any[]> {
-  // Reduced logging - only log if limit is high (initial sync)
-  if (limit > 5000) {
-    console.log(`[Bitquery] 📡 Fetching OrderFilled events (limit: ${limit})...`);
-  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -191,10 +168,6 @@ export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any
 }
 
 export async function fetchConditionPreparationEvents(limit: number = 10000): Promise<any[]> {
-  // Reduced logging - only log if limit is high (initial sync)
-  if (limit > 5000) {
-    console.log(`[Bitquery] 📡 Fetching ConditionPreparation events (limit: ${limit})...`);
-  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -230,10 +203,6 @@ export async function fetchConditionPreparationEvents(limit: number = 10000): Pr
 }
 
 export async function fetchQuestionInitializedEvents(limit: number = 10000): Promise<any[]> {
-  // Reduced logging - only log if limit is high (initial sync)
-  if (limit > 5000) {
-    console.log(`[Bitquery] 📡 Fetching QuestionInitialized events (limit: ${limit})...`);
-  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -305,8 +274,6 @@ export async function fetchQuestionInitializedEvents(limit: number = 10000): Pro
 
 // Fetch TokenRegistered events for a specific condition_id (on-demand)
 export async function fetchTokenRegisteredByConditionId(conditionId: string): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching TokenRegistered events for conditionId: ${conditionId.substring(0, 16)}...`);
-  
   // Ensure conditionId is in hex format (add 0x if missing)
   const formattedConditionId = conditionId.startsWith('0x') ? conditionId : `0x${conditionId}`;
   
@@ -372,7 +339,6 @@ export async function fetchTokenRegisteredByConditionId(conditionId: string): Pr
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} TokenRegistered events for conditionId in ${duration}ms`);
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching TokenRegistered by conditionId:', error);
@@ -383,8 +349,6 @@ export async function fetchTokenRegisteredByConditionId(conditionId: string): Pr
 // Fetch OrderFilled events for specific token0 and token1 (on-demand)
 // Note: token0 and token1 are bigInteger values, not hex bytes
 export async function fetchOrderFilledByTokens(token0: string, token1: string): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching OrderFilled events for token0: ${token0.substring(0, 16)}..., token1: ${token1.substring(0, 16)}...`);
-  
   // Filter out USDC (0) as per user requirement - don't use 0 in the query
   const tokensToQuery: string[] = [];
   if (token0 && token0 !== '0' && token0 !== '0x0' && token0 !== '0x0000000000000000000000000000000000000000') {
@@ -395,7 +359,6 @@ export async function fetchOrderFilledByTokens(token0: string, token1: string): 
   }
   
   if (tokensToQuery.length === 0) {
-    console.log(`[Bitquery] ⚠️  Both tokens are USDC (0), skipping API query`);
     return [];
   }
   
@@ -463,7 +426,6 @@ export async function fetchOrderFilledByTokens(token0: string, token1: string): 
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} OrderFilled events for tokens in ${duration}ms`);
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching OrderFilled by tokens:', error);
@@ -473,8 +435,6 @@ export async function fetchOrderFilledByTokens(token0: string, token1: string): 
 
 // Fetch balance updates (holders) for specific token IDs
 export async function fetchBalanceUpdates(token0: string, token1: string): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching BalanceUpdates for token0: ${token0.substring(0, 16)}..., token1: ${token1.substring(0, 16)}...`);
-  
   // Filter out USDC (0) as per user requirement - don't use 0 in the query
   const tokensToQuery: string[] = [];
   if (token0 && token0 !== '0' && token0 !== '0x0' && token0 !== '0x0000000000000000000000000000000000000000') {
@@ -520,8 +480,6 @@ export async function fetchBalanceUpdates(token0: string, token1: string): Promi
     }
   `;
   
-  console.log(`[Bitquery] 🔍 Query: BalanceUpdates for tokens: ${tokensToQuery.map(t => t.substring(0, 16) + '...').join(', ')}`);
-
   try {
     // Always reset client to ensure fresh token is used
     resetClient();
@@ -534,22 +492,10 @@ export async function fetchBalanceUpdates(token0: string, token1: string): Promi
       throw new Error('OAuth token is missing or empty');
     }
     
-    const trimmedToken = oauthToken.trim();
-    console.log(`[Bitquery] 📤 Sending BalanceUpdates query`);
-    console.log(`[Bitquery] 🔑 Using token: ${trimmedToken.substring(0, 30)}... (length: ${trimmedToken.length})`);
-    console.log(`[Bitquery] 📋 Query tokens: ${tokensToQuery.map(t => t.substring(0, 16) + '...').join(', ')}`);
-    
     // Make request - headers should be set in client, but verify
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const balanceUpdates = data.EVM?.BalanceUpdates || [];
-    console.log(`[Bitquery] ✅ Fetched ${balanceUpdates.length} BalanceUpdates in ${duration}ms`);
-    
-    if (balanceUpdates.length > 0) {
-      console.log(`[Bitquery] 📊 Sample balance update structure:`, JSON.stringify(balanceUpdates[0], null, 2));
-    } else {
-      console.log(`[Bitquery] ⚠️  No balance updates found. Full response:`, JSON.stringify(data, null, 2));
-    }
     
     return balanceUpdates;
   } catch (error: any) {

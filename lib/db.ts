@@ -9,12 +9,9 @@ let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!db) {
-    console.log(`[DB] 📂 Initializing database at: ${dbPath}`);
-    
     // Ensure data directory exists
     const dbDir = resolve(dbPath, '..');
     if (!existsSync(dbDir)) {
-      console.log(`[DB] 📁 Creating data directory: ${dbDir}`);
       mkdirSync(dbDir, { recursive: true });
     }
     
@@ -22,13 +19,11 @@ export function getDb(): Database.Database {
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = OFF');
     initializeDatabase(db);
-    console.log('[DB] ✅ Database initialized');
   }
   return db;
 }
 
 function initializeDatabase(database: Database.Database) {
-  console.log('[DB] 🔧 Creating database tables...');
   // TokenRegistered events table
   database.exec(`
     CREATE TABLE IF NOT EXISTS token_registered_events (
@@ -43,31 +38,22 @@ function initializeDatabase(database: Database.Database) {
       UNIQUE(transaction_hash, condition_id)
     )
   `);
-  console.log('[DB] ✅ Created table: token_registered_events');
   
   // Migration: Add token0 and token1 columns if they don't exist
   try {
     database.exec(`
       ALTER TABLE token_registered_events ADD COLUMN token0 TEXT;
     `);
-    console.log('[DB] ✅ Added column: token0');
   } catch (e: any) {
     // Column already exists, ignore
-    if (!e.message?.includes('duplicate column')) {
-      console.log('[DB] ⚠️  token0 column may already exist');
-    }
   }
   
   try {
     database.exec(`
       ALTER TABLE token_registered_events ADD COLUMN token1 TEXT;
     `);
-    console.log('[DB] ✅ Added column: token1');
   } catch (e: any) {
     // Column already exists, ignore
-    if (!e.message?.includes('duplicate column')) {
-      console.log('[DB] ⚠️  token1 column may already exist');
-    }
   }
   
   // Migration: Remove asset_id column (SQLite doesn't support DROP COLUMN, so we recreate the table)
@@ -76,7 +62,6 @@ function initializeDatabase(database: Database.Database) {
     const hasAssetId = tableInfo.some((col: any) => col.name === 'asset_id');
     
     if (hasAssetId) {
-      console.log('[DB] 🔄 Removing asset_id column (recreating table)...');
       // Create new table without asset_id
       database.exec(`
         CREATE TABLE token_registered_events_new (
@@ -109,10 +94,9 @@ function initializeDatabase(database: Database.Database) {
         CREATE INDEX IF NOT EXISTS idx_token_registered_condition_id ON token_registered_events(condition_id);
       `);
       
-      console.log('[DB] ✅ Removed asset_id column');
     }
   } catch (e: any) {
-    console.log('[DB] ⚠️  Error removing asset_id column:', e.message);
+    // Error removing asset_id column - ignore
   }
 
   // OrderFilled events table
@@ -133,7 +117,6 @@ function initializeDatabase(database: Database.Database) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  console.log('[DB] ✅ Created table: order_filled_events');
 
   // ConditionPreparation events table
   database.exec(`
@@ -149,7 +132,6 @@ function initializeDatabase(database: Database.Database) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  console.log('[DB] ✅ Created table: condition_preparation_events');
 
   // QuestionInitialized events table
   database.exec(`
@@ -169,7 +151,6 @@ function initializeDatabase(database: Database.Database) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  console.log('[DB] ✅ Created table: question_initialized_events');
 
   // Create indexes
   database.exec(`
@@ -179,7 +160,6 @@ function initializeDatabase(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_condition_prep_question_id ON condition_preparation_events(question_id);
     CREATE INDEX IF NOT EXISTS idx_condition_prep_condition_id ON condition_preparation_events(condition_id);
   `);
-  console.log('[DB] ✅ Created indexes');
 }
 
 // Insert functions with duplicate checking
@@ -363,8 +343,6 @@ export function getMarketsWithDataAndTrades() {
     ORDER BY q.block_time DESC
     LIMIT 500
   `).all();
-  const duration = Date.now() - startTime;
-  console.log(`[DB] 📊 Query: getMarketsWithDataAndTrades() returned ${results.length} markets in ${duration}ms`);
   return results;
 }
 
@@ -410,14 +388,12 @@ export function getMarketDetails(questionId: string) {
   `).get(questionId);
 
   if (!market) {
-    console.log(`[DB] ⚠️  Market not found for questionId: ${questionId.substring(0, 16)}...`);
     return null;
   }
 
   // Step 2: Get condition_id from the relationship
   const conditionId = (market as any).condition_id;
   if (!conditionId) {
-    console.log(`[DB] ⚠️  No conditionId found for market (no condition_preparation_events match)`);
     return {
       market,
       trades: [],
@@ -450,11 +426,6 @@ export function getMarketDetails(questionId: string) {
   // Step 5: Filter trades where maker_asset_id or taker_asset_id matches token0 or token1
   // Also handles USDC case where "0" represents USDC
   const trades = filterTradesByTokens(allTrades, tokens);
-  const duration = Date.now() - startTime;
-  // Reduced logging - only log if query is slow
-  if (duration > 500) {
-    console.log(`[DB] ✅ Found market with ${trades.length} trades in ${duration}ms`);
-  }
 
   return {
     market,
@@ -515,7 +486,6 @@ export function filterTradesByTokens(trades: any[], tokens: any[]): any[] {
 // 2. token0/token1 -> trades (via order_filled_events matching maker_asset_id/taker_asset_id)
 export function getTradesForMarket(conditionId: string) {
   const db = getDb();
-  console.log(`[DB] 📊 Query: getTradesForMarket(conditionId=${conditionId.substring(0, 16)}...)`);
   const startTime = Date.now();
   
   // Step 1: Get token0 and token1 for this condition (relationship: condition_id -> token0/token1)
@@ -542,11 +512,6 @@ export function getTradesForMarket(conditionId: string) {
   // Also handles USDC case where "0" represents USDC
   const results = filterTradesByTokens(allTrades, tokens).slice(0, 100);
   
-  const duration = Date.now() - startTime;
-  // Reduced logging - only log if query is slow or returns many results
-  if (duration > 500 || results.length > 100) {
-    console.log(`[DB] ✅ Found ${results.length} trades in ${duration}ms`);
-  }
   return results;
 }
 
@@ -558,8 +523,6 @@ export function areTablesEmpty(): boolean {
   const orderFilledCount = db.prepare('SELECT COUNT(*) as count FROM order_filled_events').get() as { count: number };
   const condPrepCount = db.prepare('SELECT COUNT(*) as count FROM condition_preparation_events').get() as { count: number };
   const questionInitCount = db.prepare('SELECT COUNT(*) as count FROM question_initialized_events').get() as { count: number };
-  
-  console.log(`[DB] 📊 Table counts: TokenRegistered=${tokenRegCount.count}, OrderFilled=${orderFilledCount.count}, ConditionPrep=${condPrepCount.count}, QuestionInit=${questionInitCount.count}`);
   
   // Only require QuestionInitialized and ConditionPreparation to have markets
   // TokenRegistered and OrderFilled are optional (markets can show without trades)
@@ -586,12 +549,6 @@ export function areAllTablesFilled(): boolean {
     condPrepCount.count > 0 &&
     questionInitCount.count > 0
   );
-  
-  if (allFilled) {
-    console.log(`[DB] ✅ All tables have data: TokenRegistered=${tokenRegCount.count}, OrderFilled=${orderFilledCount.count}, ConditionPrep=${condPrepCount.count}, QuestionInit=${questionInitCount.count}`);
-  } else {
-    console.log(`[DB] ⚠️  Some tables are empty: TokenRegistered=${tokenRegCount.count}, OrderFilled=${orderFilledCount.count}, ConditionPrep=${condPrepCount.count}, QuestionInit=${questionInitCount.count}`);
-  }
   
   return allFilled;
 }
