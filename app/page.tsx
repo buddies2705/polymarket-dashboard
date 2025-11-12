@@ -41,6 +41,7 @@ export default function Home() {
   // Force render after initial mount
   useEffect(() => {
     console.log('[Frontend] Component mounted, loading:', loading, 'markets:', markets.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSyncStatus = async () => {
@@ -174,7 +175,7 @@ export default function Home() {
                   Loading Initial Data
                 </h2>
                 <p className="text-blue-700 mb-4">
-                  We're fetching market data from the blockchain. This may take a few minutes...
+                  We&apos;re fetching market data from the blockchain. This may take a few minutes...
                 </p>
                 <div className="text-sm text-blue-600">
                   <p>Fetching events: TokenRegistered, OrderFilled, ConditionPreparation, QuestionInitialized</p>
@@ -235,7 +236,7 @@ export default function Home() {
                   Markets without Trades ({markets.filter((m: any) => m.trade_count === 0).length})
                 </h2>
                 <p className="text-sm text-gray-600 mb-4">
-                  Click on any market to use the "Refresh Trades" button to fetch trades from the API.
+                  Click on any market to use the &quot;Refresh Trades&quot; button to fetch trades from the API.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {markets
