@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: polymarket-dashboard
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: BITQUERY_OAUTH_TOKEN
+        sync: false
+      - key: PORT
+        value: 3001
+    disk:
+      name: data-disk
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+
