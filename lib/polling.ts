@@ -397,33 +397,33 @@ export function startPolling() {
   // Run initial sync if tables are empty
   runInitialSync();
 
-  // All queries run every 15 minutes - queue for sequential execution with retry
-  // TokenRegistered: Every 15 minutes
-  cron.schedule('*/15 * * * *', () => {
+  // All queries run every 60 minutes - queue for sequential execution with retry
+  // TokenRegistered: Every 60 minutes
+  cron.schedule('0 * * * *', () => {
     enqueueQuery(
       () => processTokenRegisteredEvents(),
       { name: 'TokenRegistered (Polling)', maxRetries: 3 }
     );
   });
 
-  // OrderFilled: Every 15 minutes
-  cron.schedule('*/15 * * * *', () => {
+  // OrderFilled: Every 60 minutes
+  cron.schedule('0 * * * *', () => {
     enqueueQuery(
       () => processOrderFilledEvents(),
       { name: 'OrderFilled (Polling)', maxRetries: 3 }
     );
   });
 
-  // ConditionPreparation: Every 15 minutes
-  cron.schedule('*/15 * * * *', () => {
+  // ConditionPreparation: Every 60 minutes
+  cron.schedule('0 * * * *', () => {
     enqueueQuery(
       () => processConditionPreparationEvents(),
       { name: 'ConditionPreparation (Polling)', maxRetries: 3 }
     );
   });
 
-  // QuestionInitialized: Every 15 minutes
-  cron.schedule('*/15 * * * *', () => {
+  // QuestionInitialized: Every 60 minutes
+  cron.schedule('0 * * * *', () => {
     enqueueQuery(
       () => processQuestionInitializedEvents(),
       { name: 'QuestionInitialized (Polling)', maxRetries: 3 }
