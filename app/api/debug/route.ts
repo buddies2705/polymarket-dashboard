@@ -7,9 +7,18 @@ import { resolve } from 'path';
 
 export async function GET() {
   try {
-    // Force checkpoint to ensure WAL writes are visible
-    checkpointDatabase();
     const db = getDb();
+    
+    // Force aggressive checkpoint on the same connection to ensure WAL writes are visible
+    // TRUNCATE mode forces all WAL data to be written to main database file
+    try {
+      const checkpointResult = db.pragma('wal_checkpoint(TRUNCATE)', { simple: true });
+      if (checkpointResult !== 0) {
+        console.error(`[Debug] Checkpoint returned ${checkpointResult} (may have active transactions)`);
+      }
+    } catch (error: any) {
+      console.error('[Debug] Checkpoint error:', error.message);
+    }
     
     // Get table counts
     const tokenRegCount = db.prepare('SELECT COUNT(*) as count FROM token_registered_events').get() as { count: number };
