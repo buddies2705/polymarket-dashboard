@@ -11,12 +11,20 @@ export async function GET() {
     
     // Force aggressive checkpoint on the same connection to ensure WAL writes are visible
     // TRUNCATE mode forces all WAL data to be written to main database file
+    let checkpointStatus = 'unknown';
     try {
       const checkpointResult = db.pragma('wal_checkpoint(TRUNCATE)', { simple: true });
+      checkpointStatus = checkpointResult === 0 ? 'success' : `failed_${checkpointResult}`;
       if (checkpointResult !== 0) {
         console.error(`[Debug] Checkpoint returned ${checkpointResult} (may have active transactions)`);
+        // Try RESTART mode as fallback
+        const restartResult = db.pragma('wal_checkpoint(RESTART)', { simple: true });
+        if (restartResult === 0) {
+          checkpointStatus = 'restart_success';
+        }
       }
     } catch (error: any) {
+      checkpointStatus = `error_${error.message}`;
       console.error('[Debug] Checkpoint error:', error.message);
     }
     
@@ -49,6 +57,7 @@ export async function GET() {
           path: dbPath,
           exists: existsSync(dbPath) || existsSync(resolve(dbPath, '..')),
           volumeMounted: existsSync('/data'),
+          checkpointStatus,
         },
         tables: {
           token_registered_events: tokenRegCount.count,
