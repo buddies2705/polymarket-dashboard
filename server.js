@@ -13,7 +13,18 @@ const port = process.env.PORT || 3001;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
+// Set a timeout for app preparation to avoid hanging
+const PREPARE_TIMEOUT = 60000; // 60 seconds
+let prepareTimeout;
+
+prepareTimeout = setTimeout(() => {
+  console.error('App preparation timeout - exiting');
+  process.exit(1);
+}, PREPARE_TIMEOUT);
+
 app.prepare().then(() => {
+  // Clear timeout since preparation succeeded
+  clearTimeout(prepareTimeout);
   const server = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
@@ -32,6 +43,17 @@ app.prepare().then(() => {
     }
     console.log(`> Ready on http://${hostname}:${port}`);
     console.log(`> Environment: ${dev ? 'development' : 'production'}`);
+    
+    // Import init after server is ready to ensure non-blocking initialization
+    // This ensures the server is listening before background tasks start
+    setTimeout(() => {
+      try {
+        require('./lib/init');
+      } catch (error) {
+        console.error('[Server] ❌ Failed to load init module:', error);
+        // Don't exit - server should continue running even if init fails
+      }
+    }, 1000); // Wait 1 second after server starts
   });
 
   // Handle graceful shutdown
@@ -51,6 +73,7 @@ app.prepare().then(() => {
     });
   });
 }).catch((err) => {
+  clearTimeout(prepareTimeout);
   console.error('Failed to prepare Next.js app:', err);
   process.exit(1);
 });

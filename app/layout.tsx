@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-// Initialize polling on server startup
-import '@/lib/init';
+// Note: Initialization is handled in server.js to avoid blocking Next.js app preparation
 
 export const metadata: Metadata = {
   title: "Polymarket Dashboard",
