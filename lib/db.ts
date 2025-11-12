@@ -349,6 +349,8 @@ export function insertQuestionInitializedEvent(event: {
 // 2. condition_preparation_events.condition_id -> token_registered_events.condition_id -> token0, token1
 // 3. token0/token1 matches maker_asset_id/taker_asset_id in order_filled_events (where "0" = USDC)
 export function getMarketsWithDataAndTrades() {
+  // Force checkpoint to ensure WAL writes are visible
+  checkpointDatabase();
   const db = getDb();
   const startTime = Date.now();
   // Get all markets with decoded data and their related condition/token info
@@ -378,6 +380,8 @@ export function getMarketsWithDataAndTrades() {
 
 // Get all order filled events (filtering will be done at API level)
 export function getAllOrderFilledEvents() {
+  // Force checkpoint to ensure WAL writes are visible
+  checkpointDatabase();
   const db = getDb();
   return db.prepare(`
     SELECT *
