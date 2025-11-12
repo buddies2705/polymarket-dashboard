@@ -534,18 +534,18 @@ export function areTablesEmpty(): boolean {
   return isEmpty;
 }
 
-// Check if all tables are filled (have data)
+// Check if all required tables are filled (have data)
+// Only requires QuestionInitialized and ConditionPreparation (same logic as areTablesEmpty)
+// TokenRegistered and OrderFilled are optional (markets can show without trades)
 export function areAllTablesFilled(): boolean {
   const db = getDb();
   
-  const tokenRegCount = db.prepare('SELECT COUNT(*) as count FROM token_registered_events').get() as { count: number };
-  const orderFilledCount = db.prepare('SELECT COUNT(*) as count FROM order_filled_events').get() as { count: number };
   const condPrepCount = db.prepare('SELECT COUNT(*) as count FROM condition_preparation_events').get() as { count: number };
   const questionInitCount = db.prepare('SELECT COUNT(*) as count FROM question_initialized_events').get() as { count: number };
   
+  // Only require QuestionInitialized and ConditionPreparation to have data
+  // This matches the logic in areTablesEmpty()
   const allFilled = (
-    tokenRegCount.count > 0 &&
-    orderFilledCount.count > 0 &&
     condPrepCount.count > 0 &&
     questionInitCount.count > 0
   );
