@@ -34,6 +34,7 @@ export function getDb(): Database.Database {
       mkdirSync(dbDir, { recursive: true });
     }
     
+    console.log(`[DB] Initializing database connection at: ${dbPath}`);
     db = new Database(dbPath, {
       // Enable WAL mode for better concurrency
       // timeout option allows retries if database is locked
@@ -43,6 +44,14 @@ export function getDb(): Database.Database {
     // Set busy timeout to handle concurrent access gracefully (5 seconds)
     db.pragma('busy_timeout = 5000');
     initializeDatabase(db);
+    
+    // Log initial table counts to verify connection
+    try {
+      const testCount = db.prepare('SELECT COUNT(*) as c FROM question_initialized_events').get() as { c: number };
+      console.log(`[DB] Database initialized. Initial question count: ${testCount.c}`);
+    } catch (error) {
+      console.error('[DB] Error checking initial count:', error);
+    }
   }
   return db;
 }
