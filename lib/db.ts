@@ -2,9 +2,28 @@ import Database from 'better-sqlite3';
 import { resolve } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-// Use DATABASE_PATH env var, or default to data/polymarket.db
-// For production, ensure this path is in a persistent volume
-const dbPath = process.env.DATABASE_PATH || process.env.DB_PATH || resolve(process.cwd(), 'data/polymarket.db');
+// Use DATABASE_PATH env var, or default based on environment
+// For Railway: Use /data/polymarket.db if /data exists (Railway volumes mount at /data)
+// For local: Use data/polymarket.db
+// IMPORTANT: On Railway, you MUST create a volume and mount it at /data for persistence
+function getDatabasePath(): string {
+  // Allow explicit override via environment variable
+  if (process.env.DATABASE_PATH || process.env.DB_PATH) {
+    return process.env.DATABASE_PATH || process.env.DB_PATH || '';
+  }
+  
+  // Check if /data exists (Railway volume mount point)
+  // If it exists, use it for persistence across deploys
+  if (existsSync('/data')) {
+    return '/data/polymarket.db';
+  }
+  
+  // Default to local data directory
+  return resolve(process.cwd(), 'data/polymarket.db');
+}
+
+const dbPath = getDatabasePath();
+export { dbPath }; // Export for debug endpoint
 let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {

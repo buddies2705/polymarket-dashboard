@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getDb, areTablesEmpty, areAllTablesFilled } from '@/lib/db';
+import { getDb, areTablesEmpty, areAllTablesFilled, dbPath } from '@/lib/db';
 import { getInitialSyncStatus } from '@/lib/polling';
 import { getBitqueryOAuthToken } from '@/lib/env';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
 
 export async function GET() {
   try {
@@ -33,8 +35,9 @@ export async function GET() {
       success: true,
       data: {
         database: {
-          path: process.env.DATABASE_PATH || process.env.DB_PATH || 'data/polymarket.db',
-          exists: true,
+          path: dbPath,
+          exists: existsSync(dbPath) || existsSync(resolve(dbPath, '..')),
+          volumeMounted: existsSync('/data'),
         },
         tables: {
           token_registered_events: tokenRegCount.count,
