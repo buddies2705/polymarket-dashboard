@@ -232,9 +232,10 @@ export function insertTokenRegisteredEvent(event: {
     event.transaction_hash
   );
   if (result.changes > 0) {
-    const token0Str = event.token0 ? event.token0.substring(0, 16) + '...' : 'null';
-    const token1Str = event.token1 ? event.token1.substring(0, 16) + '...' : 'null';
-    console.log(`[DB] ✅ Inserted TokenRegistered: conditionId=${event.condition_id.substring(0, 16)}..., token0=${token0Str}, token1=${token1Str}, tx=${event.transaction_hash.substring(0, 16)}...`);
+    // Reduced logging to avoid rate limits - only log every 100th insert
+    if (Math.random() < 0.01) {
+      console.log(`[DB] ✅ Inserted TokenRegistered: conditionId=${event.condition_id.substring(0, 16)}...`);
+    }
     copyDatabaseIfNeeded();
   }
 }
@@ -272,7 +273,10 @@ export function insertOrderFilledEvent(event: {
     event.transaction_hash
   );
   if (result.changes > 0) {
-    console.log(`[DB] ✅ Inserted OrderFilled: orderHash=${event.order_hash.substring(0, 16)}..., maker=${event.maker.substring(0, 10)}..., amounts=${parseInt(event.maker_amount_filled)/1e6}/${parseInt(event.taker_amount_filled)/1e6}`);
+    // Reduced logging to avoid rate limits - only log every 100th insert
+    if (Math.random() < 0.01) {
+      console.log(`[DB] ✅ Inserted OrderFilled: orderHash=${event.order_hash.substring(0, 16)}...`);
+    }
     copyDatabaseIfNeeded();
   }
 }
@@ -302,7 +306,10 @@ export function insertConditionPreparationEvent(event: {
     event.transaction_hash
   );
   if (result.changes > 0) {
-    console.log(`[DB] ✅ Inserted ConditionPreparation: conditionId=${event.condition_id.substring(0, 16)}..., questionId=${event.question_id.substring(0, 16)}...`);
+    // Reduced logging to avoid rate limits - only log every 100th insert
+    if (Math.random() < 0.01) {
+      console.log(`[DB] ✅ Inserted ConditionPreparation: conditionId=${event.condition_id.substring(0, 16)}...`);
+    }
     copyDatabaseIfNeeded();
   }
 }
@@ -349,7 +356,10 @@ export function insertQuestionInitializedEvent(event: {
     } catch (e) {
       // Ignore parse errors
     }
-    console.log(`[DB] ✅ Inserted QuestionInitialized: questionId=${event.question_id.substring(0, 16)}..., title="${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`);
+    // Reduced logging to avoid rate limits - only log every 50th insert
+    if (Math.random() < 0.02) {
+      console.log(`[DB] ✅ Inserted QuestionInitialized: questionId=${event.question_id.substring(0, 16)}..., title="${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`);
+    }
     copyDatabaseIfNeeded();
   }
 }
@@ -412,7 +422,7 @@ export function getTokenRegisteredEventsByConditionId(conditionId: string) {
 // 3. token0/token1 -> trades (via order_filled_events matching maker_asset_id/taker_asset_id)
 export function getMarketDetails(questionId: string) {
   const db = getDb();
-  console.log(`[DB] 📊 Query: getMarketDetails(questionId=${questionId.substring(0, 16)}...)`);
+  // Reduced logging - removed verbose query logging
   const startTime = Date.now();
   
   // Step 1: Get market and condition_id (relationship: question_id -> condition_id)
@@ -469,7 +479,10 @@ export function getMarketDetails(questionId: string) {
   // Also handles USDC case where "0" represents USDC
   const trades = filterTradesByTokens(allTrades, tokens);
   const duration = Date.now() - startTime;
-  console.log(`[DB] ✅ Found market with ${trades.length} trades (matched via condition_id -> token0/token1) in ${duration}ms`);
+  // Reduced logging - only log if query is slow
+  if (duration > 500) {
+    console.log(`[DB] ✅ Found market with ${trades.length} trades in ${duration}ms`);
+  }
 
   return {
     market,
@@ -558,7 +571,10 @@ export function getTradesForMarket(conditionId: string) {
   const results = filterTradesByTokens(allTrades, tokens).slice(0, 100);
   
   const duration = Date.now() - startTime;
-  console.log(`[DB] ✅ Found ${results.length} trades for conditionId (matched via token0/token1) in ${duration}ms`);
+  // Reduced logging - only log if query is slow or returns many results
+  if (duration > 500 || results.length > 100) {
+    console.log(`[DB] ✅ Found ${results.length} trades in ${duration}ms`);
+  }
   return results;
 }
 

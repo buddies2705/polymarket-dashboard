@@ -113,7 +113,10 @@ export function getArgumentValue(args: any[], name: string): string | null {
 }
 
 export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching TokenRegistered events (limit: ${limit})...`);
+  // Reduced logging - only log if limit is high (initial sync)
+  if (limit > 5000) {
+    console.log(`[Bitquery] 📡 Fetching TokenRegistered events (limit: ${limit})...`);
+  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -137,7 +140,10 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} TokenRegistered events in ${duration}ms`);
+    // Reduced logging - only log summary
+    if (events.length > 0 || duration > 5000) {
+      console.log(`[Bitquery] ✅ Fetched ${events.length} TokenRegistered events in ${duration}ms`);
+    }
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching TokenRegistered events:', error);
@@ -146,7 +152,10 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
 }
 
 export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching OrderFilled events (limit: ${limit})...`);
+  // Reduced logging - only log if limit is high (initial sync)
+  if (limit > 5000) {
+    console.log(`[Bitquery] 📡 Fetching OrderFilled events (limit: ${limit})...`);
+  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -170,7 +179,10 @@ export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} OrderFilled events in ${duration}ms`);
+    // Reduced logging - only log summary
+    if (events.length > 0 || duration > 5000) {
+      console.log(`[Bitquery] ✅ Fetched ${events.length} OrderFilled events in ${duration}ms`);
+    }
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching OrderFilled events:', error);
@@ -179,7 +191,10 @@ export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any
 }
 
 export async function fetchConditionPreparationEvents(limit: number = 10000): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching ConditionPreparation events (limit: ${limit}, last 36h)...`);
+  // Reduced logging - only log if limit is high (initial sync)
+  if (limit > 5000) {
+    console.log(`[Bitquery] 📡 Fetching ConditionPreparation events (limit: ${limit})...`);
+  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -203,7 +218,10 @@ export async function fetchConditionPreparationEvents(limit: number = 10000): Pr
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} ConditionPreparation events in ${duration}ms`);
+    // Reduced logging - only log summary
+    if (events.length > 0 || duration > 5000) {
+      console.log(`[Bitquery] ✅ Fetched ${events.length} ConditionPreparation events in ${duration}ms`);
+    }
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching ConditionPreparation events:', error);
@@ -212,7 +230,10 @@ export async function fetchConditionPreparationEvents(limit: number = 10000): Pr
 }
 
 export async function fetchQuestionInitializedEvents(limit: number = 10000): Promise<any[]> {
-  console.log(`[Bitquery] 📡 Fetching QuestionInitialized events (limit: ${limit}, last 36h)...`);
+  // Reduced logging - only log if limit is high (initial sync)
+  if (limit > 5000) {
+    console.log(`[Bitquery] 📡 Fetching QuestionInitialized events (limit: ${limit})...`);
+  }
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -271,7 +292,10 @@ export async function fetchQuestionInitializedEvents(limit: number = 10000): Pro
     const data: any = await client.request(query);
     const duration = Date.now() - startTime;
     const events = data.EVM?.Events || [];
-    console.log(`[Bitquery] ✅ Fetched ${events.length} QuestionInitialized events in ${duration}ms`);
+    // Reduced logging - only log summary
+    if (events.length > 0 || duration > 5000) {
+      console.log(`[Bitquery] ✅ Fetched ${events.length} QuestionInitialized events in ${duration}ms`);
+    }
     return events;
   } catch (error) {
     console.error('[Bitquery] ❌ Error fetching QuestionInitialized events:', error);

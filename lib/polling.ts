@@ -55,7 +55,10 @@ async function processQueue() {
   }
 
   isProcessingQueue = true;
-  console.log(`[Queue] 📋 Processing queue (${queryQueue.length} queries waiting)...`);
+  // Reduced logging - only log queue start if queue is large
+  if (queryQueue.length > 5) {
+    console.log(`[Queue] 📋 Processing queue (${queryQueue.length} queries waiting)...`);
+  }
 
   while (queryQueue.length > 0) {
     const queuedQuery = queryQueue.shift();
@@ -65,16 +68,22 @@ async function processQueue() {
     const queryName = name || 'Query';
 
     try {
-      console.log(`[Queue] ▶️  Executing ${queryName} (${queryQueue.length} remaining, attempt ${retries + 1}/${maxRetries + 1})...`);
+      // Only log if retrying or if queue is large
+      if (retries > 0 || queryQueue.length > 5) {
+        console.log(`[Queue] ▶️  Executing ${queryName} (${queryQueue.length} remaining, attempt ${retries + 1}/${maxRetries + 1})...`);
+      }
       await fn();
-      console.log(`[Queue] ✅ ${queryName} completed successfully (${queryQueue.length} remaining)`);
+      // Only log completion if retrying or queue is large
+      if (retries > 0 || queryQueue.length > 5) {
+        console.log(`[Queue] ✅ ${queryName} completed (${queryQueue.length} remaining)`);
+      }
     } catch (error) {
       console.error(`[Queue] ❌ ${queryName} failed (attempt ${retries + 1}/${maxRetries + 1}):`, error);
       
       // Retry with backoff if we haven't exceeded max retries
       if (retries < maxRetries) {
         const nextBackoff = backoffMs * BACKOFF_MULTIPLIER;
-        console.log(`[Queue] 🔄 Retrying ${queryName} in ${(nextBackoff / 1000).toFixed(1)}s (${retries + 1}/${maxRetries} retries used)...`);
+        console.log(`[Queue] 🔄 Retrying ${queryName} in ${(nextBackoff / 1000).toFixed(1)}s...`);
         
         // Wait for backoff period
         await sleep(backoffMs);
@@ -87,7 +96,6 @@ async function processQueue() {
           backoffMs: nextBackoff,
           name,
         });
-        console.log(`[Queue] 📥 ${queryName} re-queued for retry (backoff: ${(nextBackoff / 1000).toFixed(1)}s)`);
       } else {
         console.error(`[Queue] ❌ ${queryName} failed after ${maxRetries + 1} attempts. Giving up.`);
       }
@@ -95,7 +103,10 @@ async function processQueue() {
   }
 
   isProcessingQueue = false;
-  console.log(`[Queue] ✅ Queue empty, all queries processed`);
+  // Only log if queue was large
+  if (queryQueue.length === 0) {
+    // Silent completion
+  }
 }
 
 // Add query to queue with retry support
@@ -151,7 +162,8 @@ async function processTokenRegisteredEvents(isInitialSync: boolean = false) {
         });
         
         count++;
-        if (count % 100 === 0) {
+        // Reduced logging - only log every 1000 items
+        if (count % 1000 === 0) {
           console.log(`${prefix} Progress: ${count}/${events.length} processed...`);
         }
       } else {
@@ -199,7 +211,8 @@ async function processOrderFilledEvents(isInitialSync: boolean = false) {
           transaction_hash: event.Transaction.Hash,
         });
         count++;
-        if (count % 500 === 0) {
+        // Reduced logging - only log every 2000 items
+        if (count % 2000 === 0) {
           console.log(`${prefix} Progress: ${count}/${events.length} processed...`);
         }
       } else {
@@ -239,7 +252,8 @@ async function processConditionPreparationEvents(isInitialSync: boolean = false)
           transaction_hash: event.Transaction.Hash,
         });
         count++;
-        if (count % 100 === 0) {
+        // Reduced logging - only log every 1000 items
+        if (count % 1000 === 0) {
           console.log(`${prefix} Progress: ${count}/${events.length} processed...`);
         }
       } else {
@@ -293,7 +307,8 @@ async function processQuestionInitializedEvents(isInitialSync: boolean = false) 
           transaction_hash: event.Transaction.Hash,
         });
         count++;
-        if (count % 100 === 0) {
+        // Reduced logging - only log every 1000 items
+        if (count % 1000 === 0) {
           console.log(`${prefix} Progress: ${count}/${events.length} processed...`);
         }
       } else {
@@ -434,7 +449,10 @@ export function startPolling() {
   // TokenRegistered: Every 5 minutes - queue for sequential execution with retry
   cron.schedule('*/5 * * * *', () => {
     const now = new Date().toISOString();
-    console.log(`\n[Polling] ⏰ ${now} - Scheduled: TokenRegistered (every 5 min) - Queued`);
+    // Reduced logging - only log first scheduled job
+    if (Math.random() < 0.1) {
+      console.log(`[Polling] ⏰ TokenRegistered scheduled (every 5 min)`);
+    }
     enqueueQuery(
       () => processTokenRegisteredEvents(),
       { name: 'TokenRegistered (Polling)', maxRetries: 3 }
@@ -444,7 +462,10 @@ export function startPolling() {
   // OrderFilled: Every 1 minute - queue for sequential execution with retry
   cron.schedule('* * * * *', () => {
     const now = new Date().toISOString();
-    console.log(`\n[Polling] ⏰ ${now} - Scheduled: OrderFilled (every 1 min) - Queued`);
+    // Reduced logging - only log first scheduled job
+    if (Math.random() < 0.1) {
+      console.log(`[Polling] ⏰ OrderFilled scheduled (every 1 min)`);
+    }
     enqueueQuery(
       () => processOrderFilledEvents(),
       { name: 'OrderFilled (Polling)', maxRetries: 3 }
@@ -454,7 +475,10 @@ export function startPolling() {
   // ConditionPreparation: Every 15 minutes - queue for sequential execution with retry
   cron.schedule('*/15 * * * *', () => {
     const now = new Date().toISOString();
-    console.log(`\n[Polling] ⏰ ${now} - Scheduled: ConditionPreparation (every 15 min) - Queued`);
+    // Reduced logging - only log first scheduled job
+    if (Math.random() < 0.1) {
+      console.log(`[Polling] ⏰ ConditionPreparation scheduled (every 15 min)`);
+    }
     enqueueQuery(
       () => processConditionPreparationEvents(),
       { name: 'ConditionPreparation (Polling)', maxRetries: 3 }
@@ -464,13 +488,16 @@ export function startPolling() {
   // QuestionInitialized: Every 15 minutes - queue for sequential execution with retry
   cron.schedule('*/15 * * * *', () => {
     const now = new Date().toISOString();
-    console.log(`\n[Polling] ⏰ ${now} - Scheduled: QuestionInitialized (every 15 min) - Queued`);
+    // Reduced logging - only log first scheduled job
+    if (Math.random() < 0.1) {
+      console.log(`[Polling] ⏰ QuestionInitialized scheduled (every 15 min)`);
+    }
     enqueueQuery(
       () => processQuestionInitializedEvents(),
       { name: 'QuestionInitialized (Polling)', maxRetries: 3 }
     );
   });
 
-  console.log('[Polling] ✅ All polling jobs scheduled and active\n');
+  console.log('[Polling] ✅ All polling jobs scheduled and active');
 }
 
