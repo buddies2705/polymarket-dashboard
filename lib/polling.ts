@@ -397,35 +397,33 @@ export function startPolling() {
   // Run initial sync if tables are empty
   runInitialSync();
 
-  // TokenRegistered: Every 5 minutes - queue for sequential execution with retry
-  cron.schedule('*/5 * * * *', () => {
+  // All queries run every 15 minutes - queue for sequential execution with retry
+  // TokenRegistered: Every 15 minutes
+  cron.schedule('*/15 * * * *', () => {
     enqueueQuery(
       () => processTokenRegisteredEvents(),
       { name: 'TokenRegistered (Polling)', maxRetries: 3 }
     );
   });
 
-  // OrderFilled: Every 1 minute - queue for sequential execution with retry
-  cron.schedule('* * * * *', () => {
-    // Reduced logging - removed scheduled job logging to avoid rate limits
+  // OrderFilled: Every 15 minutes
+  cron.schedule('*/15 * * * *', () => {
     enqueueQuery(
       () => processOrderFilledEvents(),
       { name: 'OrderFilled (Polling)', maxRetries: 3 }
     );
   });
 
-  // ConditionPreparation: Every 15 minutes - queue for sequential execution with retry
+  // ConditionPreparation: Every 15 minutes
   cron.schedule('*/15 * * * *', () => {
-    // Reduced logging - removed scheduled job logging to avoid rate limits
     enqueueQuery(
       () => processConditionPreparationEvents(),
       { name: 'ConditionPreparation (Polling)', maxRetries: 3 }
     );
   });
 
-  // QuestionInitialized: Every 15 minutes - queue for sequential execution with retry
+  // QuestionInitialized: Every 15 minutes
   cron.schedule('*/15 * * * *', () => {
-    // Reduced logging - removed scheduled job logging to avoid rate limits
     enqueueQuery(
       () => processQuestionInitializedEvents(),
       { name: 'QuestionInitialized (Polling)', maxRetries: 3 }
