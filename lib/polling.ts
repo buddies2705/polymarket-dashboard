@@ -391,12 +391,18 @@ export function getInitialSyncStatus() {
 
 export function startPolling() {
   if (isPolling) {
+    console.log('[Polling] ⏭️  Already started, skipping');
     return;
   }
 
+  console.log('[Polling] 🚀 Starting polling system...');
   isPolling = true;
 
   // Run initial sync if tables are empty
+  console.log('[Polling] 📊 Checking if initial sync is needed...');
+  const tablesEmpty = areTablesEmpty();
+  const allTablesFilled = areAllTablesFilled();
+  console.log(`[Polling] Tables empty: ${tablesEmpty}, All filled: ${allTablesFilled}`);
   runInitialSync();
 
   // All queries run every 60 minutes - queue for sequential execution with retry
