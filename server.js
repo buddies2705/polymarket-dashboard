@@ -44,20 +44,20 @@ app.prepare().then(() => {
     console.log(`> Ready on http://${hostname}:${port}`);
     console.log(`> Environment: ${dev ? 'development' : 'production'}`);
     
-    // Import init after server is ready to ensure non-blocking initialization
-    // This ensures the server is listening before background tasks start
-    // Use setTimeout to defer initialization
+    // Trigger initialization via Next.js API route after server is ready
+    // This ensures the server is listening and Next.js modules are available
     setTimeout(() => {
-      try {
-        // Try to require the JavaScript version first (for server.js compatibility)
-        require('./lib/init.js');
-      } catch (error) {
-        // If that fails, log but don't crash - server should still work
-        console.error('[Server] ❌ Failed to load init module:', error.message);
-        console.error('[Server] Stack:', error.stack);
-        // Don't exit - server should continue running even if init fails
-      }
-    }, 2000); // Wait 2 seconds after server starts to ensure Next.js is fully ready
+      // Call the init API route to trigger initialization
+      // This uses Next.js's module system which properly handles TypeScript
+      fetch(`http://localhost:${port}/api/init`)
+        .then(() => {
+          console.log('[Server] ✅ Initialization triggered via API route');
+        })
+        .catch((error) => {
+          // Log but don't crash - initialization will happen when API route is first accessed
+          console.log('[Server] ⚠️  Could not trigger init via API (will initialize on first API call):', error.message);
+        });
+    }, 3000); // Wait 3 seconds after server starts to ensure Next.js is fully ready
   });
 
   // Handle graceful shutdown
