@@ -53,7 +53,8 @@ export async function GET() {
     
     // Log for debugging
     if (markets.length === 0) {
-      console.log('[API] ⚠️  No markets returned from getMarketsWithDataAndTrades()');
+      console.error('[API] ⚠️  No markets returned from getMarketsWithDataAndTrades()');
+      console.error('[API] This might indicate a WAL checkpoint issue or empty database');
     } else {
       console.log(`[API] ✅ Found ${markets.length} markets`);
     }

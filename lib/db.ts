@@ -401,6 +401,7 @@ export function getMarketsWithDataAndTrades() {
   `).get() as { c: number };
   
   console.log(`[DB] Query stats - Questions: ${totalQuestions.c}, Conditions: ${totalConditions.c}, With decoded: ${withDecoded.c}, With decoded+conditions: ${withConditions.c}`);
+  console.log(`[DB] Database path: ${dbPath}, Connection: ${db ? 'active' : 'null'}`);
   
   // Get all markets with decoded data and their related condition/token info
   // Relationship: question_id -> condition_id -> token0/token1
