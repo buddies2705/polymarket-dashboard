@@ -367,12 +367,16 @@ export function getMarketsWithDataAndTrades() {
   const db = getDb();
   const startTime = Date.now();
   
-  // Try checkpoint, but don't block if it fails (polling might be writing)
+  // Force aggressive checkpoint to ensure WAL writes are visible
+  // TRUNCATE mode forces all WAL data to be written to main database file
   try {
-    checkpointDatabase();
-  } catch (error) {
+    const checkpointResult = db.pragma('wal_checkpoint(TRUNCATE)', { simple: true });
+    if (checkpointResult !== 0) {
+      console.error(`[DB] Checkpoint returned ${checkpointResult} (may have active transactions)`);
+    }
+  } catch (error: any) {
     // Checkpoint failed - continue anyway, WAL mode allows concurrent reads
-    console.log('[DB] Checkpoint skipped (may have active writes)');
+    console.error('[DB] Checkpoint error:', error.message);
   }
   
   // Debug: Check counts before query
@@ -419,9 +423,16 @@ export function getMarketsWithDataAndTrades() {
 
 // Get all order filled events (filtering will be done at API level)
 export function getAllOrderFilledEvents() {
-  // Force checkpoint to ensure WAL writes are visible
-  checkpointDatabase();
   const db = getDb();
+  // Force aggressive checkpoint to ensure WAL writes are visible
+  try {
+    const checkpointResult = db.pragma('wal_checkpoint(TRUNCATE)', { simple: true });
+    if (checkpointResult !== 0) {
+      console.error(`[DB] Checkpoint returned ${checkpointResult} (may have active transactions)`);
+    }
+  } catch (error: any) {
+    console.error('[DB] Checkpoint error:', error.message);
+  }
   return db.prepare(`
     SELECT *
     FROM order_filled_events
