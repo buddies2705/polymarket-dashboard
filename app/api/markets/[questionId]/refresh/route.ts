@@ -84,8 +84,9 @@ export async function POST(
       }
     } else {
       // Use existing tokens from DB
-      token0 = tokens[0].token0;
-      token1 = tokens[0].token1;
+      const tokenData = tokens[0] as any;
+      token0 = tokenData.token0;
+      token1 = tokenData.token1;
       console.log(`[API] ✅ Using existing tokens from DB: token0=${token0?.substring(0, 16)}..., token1=${token1?.substring(0, 16)}...`);
     }
 
