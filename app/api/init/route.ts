@@ -12,6 +12,7 @@ if (typeof window === 'undefined') {
   setImmediate(() => {
     if (!initialized) {
       try {
+        console.log('[Init API] 🚀 Auto-initializing polling...');
         startPolling();
         initialized = true;
         console.log('[Init API] ✅ Polling started via auto-initialization');
@@ -19,6 +20,8 @@ if (typeof window === 'undefined') {
         console.error('[Init API] ❌ Failed to start polling:', error.message);
         console.error('[Init API] Stack:', error.stack);
       }
+    } else {
+      console.log('[Init API] ⏭️  Already initialized, skipping');
     }
   });
 }
