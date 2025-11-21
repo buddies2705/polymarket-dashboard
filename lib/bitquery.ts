@@ -3,9 +3,14 @@ import { GraphQLClient } from 'graphql-request';
 import './env';
 import { getBitqueryOAuthToken } from './env';
 
-const CTF_EXCHANGE_ADDRESS = '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E';
+const CTF_EXCHANGE_ADDRESSES = ['0xC5d563A36AE78145C45a50134d48A1215220f80a', '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E'];
 const MAIN_POLYMARKET_ADDRESS = '0x4d97dcd97ec945f40cf65f87097ace5ea0476045';
 const UMA_ADAPTER_ADDRESS = '0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7';
+
+// Helper function to format addresses for GraphQL query
+function formatAddressesForQuery(addresses: string[]): string {
+  return addresses.map(addr => `"${addr}"`).join(', ');
+}
 
 let client: GraphQLClient | null = null;
 
@@ -102,6 +107,7 @@ export function getArgumentValue(args: any[], name: string): string | null {
 }
 
 export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise<any[]> {
+  const addressesStr = formatAddressesForQuery(CTF_EXCHANGE_ADDRESSES);
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -109,7 +115,7 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
           where: {
             Block: {Time: {since_relative: {hours_ago: 72}}},
             Log: {Signature: {Name: {in: ["TokenRegistered"]}}},
-            LogHeader: {Address: {is: "${CTF_EXCHANGE_ADDRESS}"}}
+            LogHeader: {Address: {in: [${addressesStr}]}}
           }
           limit: {count: ${limit}}
         ) {
@@ -133,6 +139,7 @@ export async function fetchTokenRegisteredEvents(limit: number = 20000): Promise
 }
 
 export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any[]> {
+  const addressesStr = formatAddressesForQuery(CTF_EXCHANGE_ADDRESSES);
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -140,7 +147,7 @@ export async function fetchOrderFilledEvents(limit: number = 10000): Promise<any
           where: {
             Block: {Time: {since_relative: {hours_ago: 72}}},
             Log: {Signature: {Name: {in: ["OrderFilled"]}}},
-            LogHeader: {Address: {is: "${CTF_EXCHANGE_ADDRESS}"}}
+            LogHeader: {Address: {in: [${addressesStr}]}}
           }
           limit: {count: ${limit}}
         ) {
@@ -276,6 +283,7 @@ export async function fetchQuestionInitializedEvents(limit: number = 10000): Pro
 export async function fetchTokenRegisteredByConditionId(conditionId: string): Promise<any[]> {
   // Ensure conditionId is in hex format (add 0x if missing)
   const formattedConditionId = conditionId.startsWith('0x') ? conditionId : `0x${conditionId}`;
+  const addressesStr = formatAddressesForQuery(CTF_EXCHANGE_ADDRESSES);
   
   const query = `
     {
@@ -291,7 +299,7 @@ export async function fetchTokenRegisteredByConditionId(conditionId: string): Pr
               }
             },
             Log: {Signature: {Name: {in: ["TokenRegistered"]}}},
-            LogHeader: {Address: {is: "${CTF_EXCHANGE_ADDRESS}"}}
+            LogHeader: {Address: {in: [${addressesStr}]}}
           }
           limit: {count: 10}
         ) {
@@ -364,6 +372,8 @@ export async function fetchOrderFilledByTokens(token0: string, token1: string): 
   
   // Build the query - tokens are bigInteger values, so we need to match them in Arguments
   // The query structure matches tokens in makerAssetId or takerAssetId arguments
+  const tokensStr = tokensToQuery.map(t => `"${t}"`).join(', ');
+  const addressesStr = formatAddressesForQuery(CTF_EXCHANGE_ADDRESSES);
   const query = `
     {
       EVM(dataset: combined, network: matic) {
@@ -374,11 +384,11 @@ export async function fetchOrderFilledByTokens(token0: string, token1: string): 
             Arguments: {
               includes: {
                 Name: {in: ["makerAssetId", "takerAssetId"]},
-                Value: {BigInteger: {in: [${tokensToQuery.map(t => `"${t}"`).join(', ')}]}}
+                Value: {BigInteger: {in: [${tokensStr}]}}
               }
             },
             Log: {Signature: {Name: {in: ["OrderFilled"]}}},
-            LogHeader: {Address: {is: "${CTF_EXCHANGE_ADDRESS}"}}
+            LogHeader: {Address: {in: [${addressesStr}]}}
           }
           limit: {count: 100}
         ) {

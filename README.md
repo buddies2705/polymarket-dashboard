@@ -260,6 +260,33 @@ On-demand fetch of tokens and trades for a specific market.
 
 Returns token holders for a market's YES/NO tokens.
 
+### POST `/api/clear-and-sync`
+
+Clears all database data and triggers a fresh sync from Bitquery.
+
+**Use Case**: Start with a clean slate, refresh all data, or test the sync process.
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Database cleared and sync started",
+  "counts": {
+    "token_registered_events": 0,
+    "order_filled_events": 0,
+    "condition_preparation_events": 0,
+    "question_initialized_events": 0
+  }
+}
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:3001/api/clear-and-sync
+```
+
+See [CLEAR_AND_SYNC.md](./CLEAR_AND_SYNC.md) for detailed documentation.
+
 ## Configuration
 
 ### Environment Variables
@@ -285,6 +312,8 @@ Make sure your production environment has `BITQUERY_OAUTH_TOKEN` set.
 
 - **[Bitquery Queries](./docs/BITQUERY_QUERIES.md)** - All GraphQL queries used
 - **[Data Flow](./docs/DATA_FLOW.md)** - Table relationships and data flow
+- **[Clear and Sync](./CLEAR_AND_SYNC.md)** - How to clear database and trigger fresh sync
+- **[Initial Sync APIs](./INITIAL_SYNC_APIS.md)** - Detailed information about sync queries
 
 ## Development
 
@@ -328,8 +357,8 @@ See deployment platform documentation for environment variable setup.
 ### Database Issues
 
 - Database file is locked: Stop the server before accessing
-- Database corrupted: Delete `data/polymarket.db*` files and restart
-- Missing data: Check polling logs, may need to wait for sync
+- Database corrupted: Delete `data/polymarket.db*` files and restart, or use `/api/clear-and-sync`
+- Missing data: Check polling logs, may need to wait for sync, or trigger fresh sync via `/api/clear-and-sync`
 
 ## License
 
