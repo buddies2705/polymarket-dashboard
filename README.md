@@ -280,9 +280,16 @@ Clears all database data and triggers a fresh sync from Bitquery.
 }
 ```
 
-**Example**:
+**Examples**:
 ```bash
+# From browser:
+http://localhost:3001/api/clear-and-sync?confirm=true
+
+# From command line (POST):
 curl -X POST http://localhost:3001/api/clear-and-sync
+
+# From command line (GET):
+curl "http://localhost:3001/api/clear-and-sync?confirm=true"
 ```
 
 See [CLEAR_AND_SYNC.md](./CLEAR_AND_SYNC.md) for detailed documentation.

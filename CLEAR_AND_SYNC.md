@@ -16,24 +16,42 @@ This is useful when:
 
 ## API Endpoint
 
-**Endpoint:** `POST /api/clear-and-sync`
+**Endpoint:** `/api/clear-and-sync`
 
-**Method:** POST
+**Methods:** 
+- `GET` - Requires `?confirm=true` query parameter (for browser access)
+- `POST` - No parameters required (for programmatic access)
 
-**Content-Type:** `application/json`
+**Content-Type:** `application/json` (for POST)
 
 **Authentication:** None required (local development only)
 
 ## Usage
 
-### Using cURL
+### From Browser (GET)
+
+Simply open the URL in your browser with the confirmation parameter:
+
+```
+http://localhost:3001/api/clear-and-sync?confirm=true
+```
+
+**Note:** The `?confirm=true` parameter is required for GET requests to prevent accidental database clears.
+
+### Using cURL (POST)
 
 ```bash
 curl -X POST http://localhost:3001/api/clear-and-sync \
   -H "Content-Type: application/json"
 ```
 
-### Using JavaScript/Fetch
+### Using cURL (GET with confirmation)
+
+```bash
+curl "http://localhost:3001/api/clear-and-sync?confirm=true"
+```
+
+### Using JavaScript/Fetch (POST)
 
 ```javascript
 const response = await fetch('http://localhost:3001/api/clear-and-sync', {
@@ -42,6 +60,15 @@ const response = await fetch('http://localhost:3001/api/clear-and-sync', {
     'Content-Type': 'application/json',
   },
 });
+
+const data = await response.json();
+console.log(data);
+```
+
+### Using JavaScript/Fetch (GET with confirmation)
+
+```javascript
+const response = await fetch('http://localhost:3001/api/clear-and-sync?confirm=true');
 
 const data = await response.json();
 console.log(data);
@@ -60,6 +87,17 @@ console.log(data);
     "condition_preparation_events": 0,
     "question_initialized_events": 0
   }
+}
+```
+
+**Error Response (400) - GET without confirmation:**
+```json
+{
+  "success": false,
+  "error": "Confirmation required",
+  "message": "Add ?confirm=true to the URL to clear database and trigger sync",
+  "example": "http://localhost:3001/api/clear-and-sync?confirm=true",
+  "note": "For programmatic access, use POST method instead"
 }
 ```
 
@@ -195,9 +233,20 @@ On Railway, this endpoint works the same way. However, if you have a persistent 
 
 ## Example Workflow
 
+### Using Browser
+
+1. Open: `http://localhost:3001/api/clear-and-sync?confirm=true`
+2. Wait a few seconds, then check sync status: `http://localhost:3001/api/sync-status`
+3. Monitor progress by refreshing the sync status page
+4. Once sync completes, check final counts: `http://localhost:3001/api/debug`
+
+### Using Command Line
+
 ```bash
 # 1. Clear database and start fresh sync
 curl -X POST http://localhost:3001/api/clear-and-sync
+# OR
+curl "http://localhost:3001/api/clear-and-sync?confirm=true"
 
 # 2. Wait a few seconds, then check sync status
 curl http://localhost:3001/api/sync-status
